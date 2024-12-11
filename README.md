@@ -83,7 +83,7 @@ Access the interactive API documentation at:
 ## **Endpoints**
 
 ### **1. Generate Video**
-- **URL**: `/generate-video`
+- **URL**: `/i2v`
 - **Method**: `POST`
 - **Request Body**:
    ```json
@@ -104,7 +104,13 @@ Access the interactive API documentation at:
 - **Response**:
    ```json
    {
-      "message": "yo! this is to test the i2v api"
+        "message": "i2v api",
+        "description": "",
+        "endpoints": {
+            "/i2v": "POST - start video generation",
+            "/docs": "Test out the API in SwaggerUI"
+        },
+        "version": "v0.1"
    }
    ```
 

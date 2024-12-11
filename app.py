@@ -6,10 +6,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
-# API Configuration
 BASE_URL = "https://api.pikapikapika.io/web"
 PIKAPI_BEARER_TOKEN = os.getenv("PIKAPI_BEARER_TOKEN")
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
@@ -20,11 +18,8 @@ if not PIKAPI_BEARER_TOKEN or not REPLICATE_API_TOKEN:
 # FastAPI App
 app = FastAPI()
 
-
-# Pydantic model for the request body
 class VideoRequestBody(BaseModel):
     image: str
-
 
 async def generate_prompt(image: str) -> str:
     """Generate a prompt using the Replicate API."""
@@ -52,16 +47,26 @@ async def send_post_request(params: dict) -> str:
     else:
         raise RuntimeError(f"POST request failed: {response.text}")
 
-
 async def check_job_status(job_id: str) -> str:
     """Check the job status and return the video URL if finished."""
     url = f"{BASE_URL}/jobs/{job_id}"
     headers = {"Authorization": f"Bearer {PIKAPI_BEARER_TOKEN}"}
+    
+    start_time = asyncio.get_event_loop().time()
+    max_check_time = 600
+    
     while True:
+        # Check if we've exceeded the maximum time
+        current_time = asyncio.get_event_loop().time()
+        if current_time - start_time > max_check_time:
+            raise RuntimeError("Video generation timed out after 10 minutes")
+            
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             job_data = response.json()
             status = job_data['videos'][0]['status']
+            print(f"Current status: {status}")
+            
             if status == "finished":
                 return job_data['videos'][0]['resultUrl']
             elif status in ["queued", "pending"]:
@@ -70,7 +75,6 @@ async def check_job_status(job_id: str) -> str:
                 raise RuntimeError(f"Job failed with status: {status}")
         else:
             raise RuntimeError(f"GET request failed: {response.text}")
-
 
 async def generate_video(image: str) -> str:
     """Main function to generate the video and return the video URL."""
@@ -98,7 +102,7 @@ async def generate_video(image: str) -> str:
     return video_url
 
 
-@app.post("/generate-video")
+@app.post("/i2v")
 async def generate_video_endpoint(request: VideoRequestBody):
     """Endpoint to generate video from an image URL."""
     try:
@@ -112,4 +116,12 @@ async def generate_video_endpoint(request: VideoRequestBody):
 
 @app.get("/")
 def read_root():
-    return {"message": "yo! this is to test the i2v api"}
+    return {
+        "message": "i2v api",
+        "description": "",
+        "endpoints": {
+            "/i2v": "POST - start video generation",
+            "/docs": "Test out the API in SwaggerUI"
+        },
+        "version": "v0.1"
+    }
