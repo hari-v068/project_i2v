@@ -83,34 +83,18 @@ Access the interactive API documentation at:
 ## **Endpoints**
 
 ### **1. Generate Video**
-- **URL**: `/i2v`
+- **URL**: `/api/v1/i2v`
 - **Method**: `POST`
 - **Request Body**:
    ```json
    {
-      "image": "https://example.com/your-image.jpg"
+      "image_id": "https://example.com/your-image.jpg"
    }
    ```
 - **Response**:
    ```json
    {
-      "video_url": "https://pikapikapika.io/videos/your-video.mp4"
-   }
-   ```
-
-### **2. Root Endpoint**
-- **URL**: `/`
-- **Method**: `GET`
-- **Response**:
-   ```json
-   {
-        "message": "i2v api",
-        "description": "",
-        "endpoints": {
-            "/i2v": "POST - start video generation",
-            "/docs": "Test out the API in SwaggerUI"
-        },
-        "version": "v0.1"
+      "media_id": "https://pikapikapika.io/videos/your-video.mp4"
    }
    ```
 
