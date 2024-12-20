@@ -1,131 +1,156 @@
-# **Image-to-Video Generator API**
+# I2V API
 
-This API acts as a wrapper for two third-party APIs: 
-1. **Replicate API**: Generates a text prompt from an image.  
-2. **Pikapikapika API**: Generates a video from the image and the generated text prompt.
+A FastAPI-based wrapper API that converts still images to videos using Replicate's CLIP interrogator and Pika's video generation capabilities. The API processes requests asynchronously and provides callbacks upon completion.
 
-It accepts an image URL, processes it, and returns a video URL.
+## Features
 
----
+- Asynchronous video generation from images
+- Automatic prompt generation using CLIP interrogator
+- Callback system for completion notifications
+- Environment-based configuration
+- Comprehensive error handling and logging
+- FastAPI-powered interactive documentation
 
-## **Features**
+## Prerequisites
 
-- Accepts an image URL via a POST request.
-- Automatically generates a descriptive prompt using the Replicate API.
-- Uses the Pikapikapika API to generate a video based on the image and prompt.
-- Returns a video URL for download or further processing.
-- Built with **FastAPI**.
+- Python 3.7+
+- FastAPI
+- Replicate API access
+- Pika API access
+- G.A.M.E API access (for callbacks)
 
----
+## Environment Setup
 
-## **Requirements**
+Create a `.env` file in the root directory with the following variables:
 
-### **System Requirements**
-- Python 3.9 or higher
-- Pip for Python package management
-
-### **Dependencies**
-The required Python libraries are listed in `requirements.txt`. These include:
-- **FastAPI**: For building the API.
-- **Uvicorn**: For running the FastAPI app.
-- **Replicate**: For accessing the Replicate API.
-- **Requests**: For HTTP communication with APIs.
-- **Python-dotenv**: For managing environment variables.
-
----
-
-## **Getting Started**
-
-### **1. Clone the Repository**
-```bash
-git clone https://github.com/hari-v068/project_i2v.git
-cd project_i2v
+```dotenv
+PIKAPI_BEARER_TOKEN=your_pika_token
+REPLICATE_API_TOKEN=your_replicate_token
+X_API_KEY=your_game_api_key
 ```
 
-### **2. Create a Virtual Environment**
+## Installation
+
+1. Clone the repository:
 ```bash
-python3 -m venv venv
-source venv/bin/activate   # On Windows: venv\Scripts\activate
+git clone <repository-url>
+cd i2v-api
 ```
 
-### **3. Install Dependencies**
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-### **4. Set Up Environment Variables**
-1. Create a `.env` file in the root directory.
-2. Use the `.env.example` file as a reference:
-   ```bash
-   cp .env.example .env
-   ```
-3. Add your API tokens:
-   - `REPLICATE_API_TOKEN`: API token for the Replicate service.
-   - `PIKAPI_BEARER_TOKEN`: API token for the Pikapikapika service.
+## Usage
 
----
+### Starting the Server
 
-## **Running the Application**
-
-### **1. Start the API Locally**
-Run the application using Uvicorn:
 ```bash
-uvicorn app:app --host 0.0.0.0 --port 8000
+uvicorn app:app --reload
 ```
-- The API will be accessible at `http://127.0.0.1:8000`.
 
-### **2. Test the API**
+The API will be available at `http://localhost:8000`
+
+### API Endpoints
+
+#### Generate Video
+```http
+POST /api/v1/i2v
+```
+
+Request headers:
+- `x-request-id`: Unique identifier for the request (required)
+
+Request body:
+```json
+{
+    "image_id": "https://example.com/image.jpg"
+}
+```
+
+Response:
+```json
+{
+    "message": "Video generation initiated. Will be ready in 5-7 minutes.",
+    "request_id": "your-request-id"
+}
+```
+
+#### Root Endpoint
+```http
+GET /
+```
+Returns API information and available endpoints.
+
+### Interactive Documentation
+
 Access the interactive API documentation at:
-- **Swagger UI**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
----
+## Configuration
 
-## **Endpoints**
+The API can be configured through the following environment variables:
 
-### **1. Generate Video**
-- **URL**: `/i2v`
-- **Method**: `POST`
-- **Request Body**:
-   ```json
-   {
-      "image": "https://example.com/your-image.jpg"
-   }
-   ```
-- **Response**:
-   ```json
-   {
-      "video_url": "https://pikapikapika.io/videos/your-video.mp4"
-   }
-   ```
+- `PIKAPI_BEARER_TOKEN`: Authentication token for Pika API
+- `REPLICATE_API_TOKEN`: Authentication token for Replicate API
+- `X_API_KEY`: API key for G.A.M.E callback API
+- `PIKAPI_BASE_URL`: Base URL for Pika API (default: "https://api.pikapikapika.io/web")
+- `REPLICATE_MODEL_ID`: ID for the CLIP interrogator model
+- `CALLBACK_API_URL`: URL for callback notifications
+- `MAX_CHECK_TIME`: Maximum time to check for video generation completion (default: 420 seconds)
+- `INITIAL_WAIT_TIME`: Initial wait time before checking status (default: 300 seconds)
 
-### **2. Root Endpoint**
-- **URL**: `/`
-- **Method**: `GET`
-- **Response**:
-   ```json
-   {
-        "message": "i2v api",
-        "description": "",
-        "endpoints": {
-            "/i2v": "POST - start video generation",
-            "/docs": "Test out the API in SwaggerUI"
-        },
-        "version": "v0.1"
-   }
-   ```
+## Callback System
 
----
+The API implements an asynchronous callback system that notifies the specified endpoint when video generation is complete. The callback includes:
 
-## **Development Notes**
+- Success response:
+```json
+{
+    "data": {
+        "addToInventory": true,
+        "status": "COMPLETED",
+        "output": {
+            "title": "Generated Video Title",
+            "type": "MEDIA",
+            "category": "MARKETING_VIDEO",
+            "url": "video_url"
+        }
+    }
+}
+```
 
-### **How It Works**
-1. **Prompt Generation**: 
-   - The API calls the Replicate API with the provided image URL to generate a descriptive text prompt.
-2. **Video Generation**:
-   - The generated prompt and image URL are sent to the Pikapikapika API to create a video.
-3. **Polling for Completion**:
-   - The API checks the status of the video generation and waits until it's finished.
-4. **Response**:
-   - Once the video is ready, the URL is returned to the client.
+- Failure response:
+```json
+{
+    "data": {
+        "addToInventory": false,
+        "status": "FAILED",
+        "output": null
+    }
+}
+```
 
----
+## Error Handling
+
+The API implements comprehensive error handling and logging:
+- Failed prompt generation
+- Video generation failures
+- Timeout handling
+- Callback delivery failures
+
+## Development
+
+The project follows a modular structure:
+- Settings management using Pydantic
+- Separate client classes for external services
+- Asynchronous processing using FastAPI
+- Comprehensive logging

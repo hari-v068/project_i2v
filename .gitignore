@@ -1,2 +1,16 @@
+# local env files
 .env
-.env
+
+# local stuff
+.bak
+test.py
+
+# python
+__pycache__/
+.venv/
+.python-version
+pyproject.toml
+uv.lock
+
+# vscode
+.vscode/
