@@ -78,7 +78,7 @@ Request body:
 Response:
 ```json
 {
-    "message": "Video generation initiated. Will be ready in 5-7 minutes.",
+    "message": "Video generation pipeline initialized | ETA: 5-7 minutes",
     "request_id": "your-request-id"
 }
 ```

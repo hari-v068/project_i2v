@@ -67,7 +67,7 @@ class VideoResponse(BaseModel):
     """Response model for video generation initiation"""
 
     message: str = Field(
-        default="Video generation initiated. Will be ready in 5-7 minutes."
+        default="Video generation pipeline initialized | ETA: 5-7 minutes"
     )
     request_id: str
 
