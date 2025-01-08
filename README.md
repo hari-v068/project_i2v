@@ -26,7 +26,7 @@ Create a `.env` file in the root directory with the following variables:
 ```dotenv
 PIKAPI_BEARER_TOKEN=your_pika_token
 REPLICATE_API_TOKEN=your_replicate_token
-X_API_KEY=your_game_api_key
+GAME_API_KEY=your_game_api_key
 ```
 
 ## Installation
@@ -101,7 +101,7 @@ The API can be configured through the following environment variables:
 
 - `PIKAPI_BEARER_TOKEN`: Authentication token for Pika API
 - `REPLICATE_API_TOKEN`: Authentication token for Replicate API
-- `X_API_KEY`: API key for G.A.M.E callback API
+- `GAME_API_KEY`: API key for G.A.M.E callback API
 - `PIKAPI_BASE_URL`: Base URL for Pika API (default: "https://api.pikapikapika.io/web")
 - `REPLICATE_MODEL_ID`: ID for the CLIP interrogator model
 - `CALLBACK_API_URL`: URL for callback notifications

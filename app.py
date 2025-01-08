@@ -2,23 +2,23 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Any
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Header
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from functools import lru_cache
 from dotenv import load_dotenv
 from replicate import Client
+from html import unescape
 import re
 from urllib.parse import unquote
 import requests
 import asyncio
 import logging
 import os
+import json
 
-# Configure logging
 logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-# Settings management
 class Settings(BaseModel):
     """Application settings with API configurations"""
 
@@ -33,7 +33,7 @@ class Settings(BaseModel):
         "pharmapsychotic/clip-interrogator:8151e1c9f47e696fa316146a2e35812ccf79cfc9eba05b11c7f450155102af70"
     )
     CALLBACK_API_URL: str = "https://game-api.virtuals.io/requests"
-    X_API_KEY: str = Field(default_factory=lambda: os.getenv("X_API_KEY"))
+    GAME_API_KEY: str = Field(default_factory=lambda: os.getenv("GAME_API_KEY"))
     MAX_CHECK_TIME: int = 420
     INITIAL_WAIT_TIME: int = 300
 
@@ -43,7 +43,7 @@ class Settings(BaseModel):
     @property
     def is_valid(self) -> bool:
         return bool(
-            self.PIKAPI_BEARER_TOKEN and self.REPLICATE_API_TOKEN and self.X_API_KEY
+            self.PIKAPI_BEARER_TOKEN and self.REPLICATE_API_TOKEN and self.GAME_API_KEY
         )
 
 
@@ -61,6 +61,19 @@ class VideoRequest(BaseModel):
     """Request model for video generation"""
 
     image_id: str = Field(..., description="URL of the image to animate")
+
+    @field_validator("image_id")
+    @classmethod
+    def decode_url(cls, v):
+        """Decode HTML-encoded URL"""
+
+        decoded = unescape(v)
+
+        decoded = decoded.replace("&#x2F;", "/")
+        decoded = decoded.replace("&#x3D;", "=")
+        decoded = decoded.replace("&amp;", "&")
+
+        return decoded
 
 
 class VideoResponse(BaseModel):
@@ -118,11 +131,18 @@ async def send_callback(
     """Send callback to the G.A.M.E"""
     try:
         url = f"{settings.CALLBACK_API_URL}/{request_id}/callback"
-        headers = {"x-api-key": settings.X_API_KEY}
+        headers = {"x-api-key": settings.GAME_API_KEY}
+        body = callback_data.model_dump()
+
+        curl_command = f"curl -X POST {url} " \
+                       f"-H 'x-api-key: {headers['x-api-key']}' " \
+                       f"-H 'Content-Type: application/json' " \
+                       f"-d '{json.dumps(body)}'"
+        logger.warning(f"Generated curl command: {curl_command}")
 
         response = requests.post(url, json=callback_data.model_dump(), headers=headers)
         response.raise_for_status()
-        logger.info(f"Callback sent successfully for request {request_id}")
+        logger.warning(f"Callback sent successfully for request {request_id}")
     except Exception as e:
         logger.error(f"Failed to send callback for request {request_id}: {str(e)}")
 
@@ -309,7 +329,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="I-2-V API",
     description="A wrapper API for Replicate & Pika with async processing",
-    version="1.0.0",
+    version="1.0.1",
     lifespan=lifespan,
 )
 
@@ -340,5 +360,5 @@ async def read_root():
             "/api/v1/i2v": "post — video gen with image url (async)",
             "/docs": "interactive docs",
         },
-        "version": "1.0.0",
+        "version": "1.0.9",
     }
